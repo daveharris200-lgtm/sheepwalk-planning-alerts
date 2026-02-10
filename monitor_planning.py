@@ -17,6 +17,24 @@ SMTP_PORT = 587
 STATE_FILE = Path("last_state.json")
 # ---------------------------------------
 
+import json
+import os
+
+
+STATE_FILE = "last_state.json"
+
+
+def load_previous():
+    if os.path.exists(STATE_FILE):
+        with open(STATE_FILE, "r") as f:
+            return json.load(f)
+    return None
+
+
+def save_current(state):
+    with open(STATE_FILE, "w") as f:
+        json.dump(state, f, indent=2)
+
 
 def safe_text(page, label):
     try:
@@ -93,8 +111,10 @@ current = get_page_state()
 previous = load_previous()
 
 if previous:
-    changes = detect_changes(previous, current)
+    changes, decision_alert = detect_changes(previous, current)
     if changes:
-        send_email(changes, current)
+        send_email(changes, decision_alert)
+else:
+    save_current(current)
 
-save_state(current)
+
