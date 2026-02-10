@@ -18,58 +18,50 @@ STATE_FILE = Path("last_state.json")
 # ---------------------------------------
 
 
+def safe_text(page, label):
+    try:
+        return (
+            page.locator(f"text={label}")
+            .first
+            .locator("xpath=../../td[last()]")
+            .inner_text(timeout=5000)
+            .strip()
+        )
+    except:
+        return None
+
+
 def get_page_state():
+    from playwright.sync_api import sync_playwright
+
+    URL = "https://publicaccess.huntingdonshire.gov.uk/online-applications/applicationDetails.do?activeTab=summary&keyVal=T07XB4IKGTL00"
+
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch()
         page = browser.new_page()
-
         page.goto(URL, timeout=60000)
-        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
 
-        # Status
-        status = page.locator("text=Status").locator("xpath=../td[2]").inner_text()
+        status = safe_text(page, "Status")
+        decision = safe_text(page, "Decision")
+        comment_deadline = safe_text(page, "Comments by")
 
-        # Decision (may be blank)
-        decision = ""
-        if page.locator("text=Decision").count() > 0:
-            decision = page.locator("text=Decision").locator("xpath=../td[2]").inner_text()
-
-        # Documents
-        documents = page.locator("a[href*='downloadDocument']").all_inner_texts()
+        docs = page.locator("a[href*='downloadDocument']")
+        documents = []
+        for i in range(docs.count()):
+            documents.append({
+                "name": docs.nth(i).inner_text().strip(),
+                "url": docs.nth(i).get_attribute("href")
+            })
 
         browser.close()
 
         return {
-            "status": status.strip(),
-            "decision": decision.strip(),
-            "documents": sorted([d.strip() for d in documents])
+            "status": status,
+            "decision": decision,
+            "comment_deadline": comment_deadline,
+            "documents": documents
         }
-
-
-def load_previous():
-    if STATE_FILE.exists():
-        return json.loads(STATE_FILE.read_text())
-    return None
-
-
-def save_state(state):
-    STATE_FILE.write_text(json.dumps(state, indent=2))
-
-
-def detect_changes(old, new):
-    changes = []
-
-    if old["status"] != new["status"]:
-        changes.append(f"Status changed: {old['status']} → {new['status']}")
-
-    if old.get("decision") != new.get("decision") and new.get("decision"):
-        changes.append(f"Decision issued: {new['decision']}")
-
-    new_docs = set(new["documents"]) - set(old["documents"])
-    if new_docs:
-        changes.append(f"{len(new_docs)} new document(s) added")
-
-    return changes
 
 
 def send_email(changes, state):
