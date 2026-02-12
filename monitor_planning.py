@@ -101,4 +101,56 @@ def send_email(changes, current_state, decision_alert=False, heartbeat=False):
     subject = f"Planning update – {APP_REF}"
 
     if decision_alert:
-        subj
+        subject = f"🚨 DECISION ISSUED – {APP_REF}"
+    elif heartbeat:
+        subject = f"Heartbeat – {APP_REF}"
+
+    body = f"""
+Planning application update: {APP_REF}
+
+""" + "\n".join(changes) + f"""
+
+Current status: {current_state.get('status', '—')}
+Decision: {current_state.get('decision', '—')}
+Comment deadline: {current_state.get('comment_deadline', '—')}
+
+This email was sent automatically.
+"""
+
+    msg = MIMEText(body)
+    msg["Subject"] = subject
+    msg["From"] = EMAIL_FROM
+    msg["To"] = EMAIL_TO
+
+    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+        server.starttls()
+        server.login(EMAIL_FROM, SMTP_PASSWORD)
+        server.send_message(msg)
+
+
+# -------- RUN --------
+current = get_page_state()
+previous = load_previous()
+
+if previous:
+    changes, decision_alert = detect_changes(previous, current)
+
+    if changes:
+        send_email(changes, current, decision_alert)
+    else:
+        send_email(
+            ["No changes detected today."],
+            current,
+            decision_alert=False,
+            heartbeat=True
+        )
+else:
+    save_current(current)
+    send_email(
+        ["Monitoring started. No previous state to compare yet."],
+        current,
+        decision_alert=False,
+        heartbeat=True
+    )
+
+save_current(current)
