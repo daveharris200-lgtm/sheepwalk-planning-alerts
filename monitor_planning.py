@@ -82,9 +82,14 @@ def get_page_state():
         }
 
 
-def send_email(changes, state):
+def send_email(changes, decision_alert=False, heartbeat=False):
     body = f"""
-Planning application update: {APP_REF}
+subject = f"Planning update – {APP_REF}"
+
+if decision_alert:
+    subject = f"🚨 DECISION ISSUED – {APP_REF}"
+elif heartbeat:
+    subject = f"Heartbeat – {APP_REF}"
 
 Changes detected:
 - """ + "\n- ".join(changes) + f"""
@@ -112,9 +117,26 @@ previous = load_previous()
 
 if previous:
     changes, decision_alert = detect_changes(previous, current)
+
     if changes:
         send_email(changes, decision_alert)
+    else:
+        # Daily heartbeat
+        send_email(
+            ["No changes detected today."],
+            decision_alert=False,
+            heartbeat=True
+        )
 else:
+    # First run – initialise state
     save_current(current)
+    send_email(
+        ["Monitoring started. No previous state to compare yet."],
+        decision_alert=False,
+        heartbeat=True
+    )
+
+save_current(current)
+
 
 
