@@ -105,17 +105,23 @@ def send_email(changes, current_state, decision_alert=False, heartbeat=False):
     elif heartbeat:
         subject = f"Heartbeat – {APP_REF}"
 
-    body = f"""
-Planning application update: {APP_REF}
+    body_lines = [
+        f"Planning application update: {APP_REF}",
+        "",
+    ]
 
-""" + "\n".join(changes) + f"""
+    body_lines.extend(changes)
 
-Current status: {current_state.get('status', '—')}
-Decision: {current_state.get('decision', '—')}
-Comment deadline: {current_state.get('comment_deadline', '—')}
+    body_lines.extend([
+        "",
+        f"Current status: {current_state.get('status', '—')}",
+        f"Decision: {current_state.get('decision', '—')}",
+        f"Comment deadline: {current_state.get('comment_deadline', '—')}",
+        "",
+        "This email was sent automatically."
+    ])
 
-This email was sent automatically.
-"""
+    body = "\n".join(body_lines)
 
     msg = MIMEText(body)
     msg["Subject"] = subject
@@ -132,7 +138,6 @@ This email was sent automatically.
         server.quit()
     except Exception as e:
         print(f"Email failed: {e}")
-
 """
 
     msg = MIMEText(body)
