@@ -134,8 +134,8 @@ def send_email(changes, current_state, decision_alert=False, heartbeat=False):
             server.send_message(msg)
         print("Email sent successfully.")
     except Exception as e:
-        print(f"Email failed: {e}")
-
+    print(f"Email failed: {e}")
+    raise
 
 # -------- RUN --------
 current = get_page_state()
