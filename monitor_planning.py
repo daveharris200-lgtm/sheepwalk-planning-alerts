@@ -13,7 +13,7 @@ EMAIL_FROM = os.environ["EMAIL_USER"]
 SMTP_PASSWORD = os.environ["EMAIL_PASS"]
 
 SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
+SMTP_PORT = 465  # SSL
 
 STATE_FILE = "last_state.json"
 # ---------------------------------------
@@ -129,25 +129,12 @@ def send_email(changes, current_state, decision_alert=False, heartbeat=False):
     msg["To"] = EMAIL_TO
 
     try:
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
-        server.login(EMAIL_FROM, SMTP_PASSWORD)
-        server.send_message(msg)
-        server.quit()
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+            server.login(EMAIL_FROM, SMTP_PASSWORD)
+            server.send_message(msg)
+        print("Email sent successfully.")
     except Exception as e:
         print(f"Email failed: {e}")
-
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = EMAIL_FROM
-    msg["To"] = EMAIL_TO
-
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-        server.starttls()
-        server.login(EMAIL_FROM, SMTP_PASSWORD)
-        server.send_message(msg)
 
 
 # -------- RUN --------
@@ -167,7 +154,6 @@ if previous:
             heartbeat=True
         )
 else:
-    save_current(current)
     send_email(
         ["Monitoring started. No previous state to compare yet."],
         current,
