@@ -138,7 +138,6 @@ def send_email(changes, current_state, decision_alert=False, heartbeat=False):
         server.quit()
     except Exception as e:
         print(f"Email failed: {e}")
-"""
 
     msg = MIMEText(body)
     msg["Subject"] = subject
