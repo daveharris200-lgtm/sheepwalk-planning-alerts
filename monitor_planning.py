@@ -1,7 +1,6 @@
 import json
 import os
-import smtplib
-from email.mime.text import MIMEText
+import requests
 from playwright.sync_api import sync_playwright
 
 # ---------------- CONFIG ----------------
@@ -9,11 +8,7 @@ URL = "https://publicaccess.huntingdonshire.gov.uk/online-applications/applicati
 APP_REF = "25/01436/FUL"
 
 EMAIL_TO = "daveharris200@gmail.com"
-EMAIL_FROM = os.environ["EMAIL_USER"]
-SMTP_PASSWORD = os.environ["EMAIL_PASS"]
-
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 465  # SSL
+EMAIL_FROM = "your_verified_sender@example.com"  # Must be verified in SendGrid
 
 STATE_FILE = "last_state.json"
 # ---------------------------------------
@@ -96,9 +91,7 @@ def detect_changes(old, new):
     return changes, decision_alert
 
 
-# -------- EMAIL --------
-import requests
-
+# -------- EMAIL (SendGrid) --------
 def send_email(changes, current_state, decision_alert=False, heartbeat=False):
     subject = f"Planning update – {APP_REF}"
 
