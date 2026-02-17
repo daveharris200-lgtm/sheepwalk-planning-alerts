@@ -97,6 +97,8 @@ def detect_changes(old, new):
 
 
 # -------- EMAIL --------
+import requests
+
 def send_email(changes, current_state, decision_alert=False, heartbeat=False):
     subject = f"Planning update – {APP_REF}"
 
@@ -123,19 +125,35 @@ def send_email(changes, current_state, decision_alert=False, heartbeat=False):
 
     body = "\n".join(body_lines)
 
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = EMAIL_FROM
-    msg["To"] = EMAIL_TO
+    response = requests.post(
+        "https://api.sendgrid.com/v3/mail/send",
+        headers={
+            "Authorization": f"Bearer {os.environ['SENDGRID_API_KEY']}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "personalizations": [
+                {
+                    "to": [{"email": EMAIL_TO}],
+                    "subject": subject,
+                }
+            ],
+            "from": {"email": EMAIL_FROM},
+            "content": [
+                {
+                    "type": "text/plain",
+                    "value": body,
+                }
+            ],
+        },
+    )
 
-    try:
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-            server.login(EMAIL_FROM, SMTP_PASSWORD)
-            server.send_message(msg)
-        print("Email sent successfully.")
-    except Exception as e:
-        print(f"Email failed: {e}")
-        raise
+    if response.status_code >= 400:
+        print("SendGrid error:", response.text)
+        raise Exception("Email failed via SendGrid")
+
+    print("Email sent successfully via SendGrid.")
+
 
 # -------- RUN --------
 current = get_page_state()
