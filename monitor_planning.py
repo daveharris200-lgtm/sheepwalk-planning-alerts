@@ -8,7 +8,8 @@ URL = "https://publicaccess.huntingdonshire.gov.uk/online-applications/applicati
 APP_REF = "25/01436/FUL"
 
 EMAIL_TO = "daveharris200@gmail.com"
-EMAIL_FROM = "your_verified_sender@example.com"  # Must be verified in SendGrid
+EMAIL_FROM = "daveharris200@gmail.com" # Must be verified in SendGrid
+
 
 STATE_FILE = "last_state.json"
 # ---------------------------------------
