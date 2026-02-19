@@ -25,6 +25,6 @@ jobs:
 
       - name: Run monitor
         env:
-          EMAIL_USER: ${{ secrets.EMAIL_USER }}
-          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
         run: python monitor_planning.py
+
